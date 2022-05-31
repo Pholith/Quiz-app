@@ -13,7 +13,12 @@
     "strict": true,
     // si vous utilisez webpack 2+ ou rollup, permettre le tree shaking :
     "module": "ES2020",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    /*"paths": {
+      "@*": [
+        "./*",
+      ],
+    },*/
   },
   "references": [
     {

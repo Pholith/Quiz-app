@@ -17,3 +17,6 @@ npm init vue@latest
 
 cd quiz-ui
 npm run dev
+
+
+tsc ; npm run dev

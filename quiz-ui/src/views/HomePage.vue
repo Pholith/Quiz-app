@@ -3,7 +3,7 @@
 </template>
 
 <script>
-// import quizApiService from "@/services/QuizApiService";
+import quizApiService from "@/services/quizApiService";
 
 export default {
   name: "HomePage",

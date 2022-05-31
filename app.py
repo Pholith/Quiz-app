@@ -44,6 +44,25 @@ def AddQuestion():
 	model.AddQuestion(request.get_json())
 	return {}, 200
 
-	
+@app.route('/questions/<section>', methods=['DELETE'])
+def DeleteQuestion(section):
+	if not IsAuthorized(request):
+		return {}, 401
+	if not section.isdigit():
+		return {}, 400
+	if model.DeleteQuestion(section) == 0:
+		return {}, 404
+	return {}, 200
+
+@app.route('/questions/<section>', methods=['GET'])
+def GetQuestion(section):
+	if not section.isdigit():
+		return {}, 400
+	question: model.Question = model.GetQuestion(section)
+	if question is None:
+		return {}, 404
+	return {model.ToJson(question)}, 200
+
+
 if __name__ == "__main__":
     app.run(ssl_context='adhoc')

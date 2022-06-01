@@ -10,7 +10,7 @@
 <script lang="ts">
 
 import { ParticipationStorageService } from "../services/ParticipationStorageService";
-import { useRouter } from "vue-router";
+import router from "../router";
 
 var username = "";
 
@@ -23,9 +23,10 @@ export default {
 
   methods: {
     launchNewQuiz() {
+
       ParticipationStorageService.savePlayerName(username);
-      useRouter().push('/questions');
-    }
+      router.push('/question');
+    },
   },
 
   async created() {

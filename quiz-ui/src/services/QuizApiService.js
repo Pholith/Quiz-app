@@ -43,6 +43,7 @@ export default {
         return this.call("get", "quiz-info");
     },
     getQuestion(position) {
+        return '{ "Quel est blabla", "titre", "image", 1}';
         return this.call("get", "questions/" + position);
     }
 };

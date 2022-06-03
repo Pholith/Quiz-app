@@ -1,4 +1,5 @@
 from email.errors import ObsoleteHeaderDefect
+import json
 import deprecation
 import sqlite3
 import typing
@@ -11,42 +12,36 @@ def GetConnection() -> sqlite3.Connection:
     db_connection.isolation_level = None
     return db_connection
 
-"""
-# start transaction
-cur.execute("begin")
 
-# save the question to db
-insertion_result = cur.execute(
-	f"insert into Question (title) values"
-	f"('{input_question.title}')")
-#send the request
-cur.execute("commit")
-#in case of exception, roolback the transaction
-cur.execute('rollback')
-"""
 primitive = (int, str, bool)
-
 def is_primitive(thing):
     return isinstance(thing, primitive)
 
 class Answer():
-    def __init__(self, text: str, is_correct: bool):
+    def __init__(self, text: str, isCorrect: bool):
         self.text = text
-        self.is_correct = is_correct
+        self.isCorrect = isCorrect
+
+    @staticmethod
+    def AddAnswer(text: str, isCorrect: bool, questionId: int):
+        connection = GetConnection()
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO answer (text, isCorrect, questionId) VALUES (?, ?, ?)", (text, isCorrect, questionId))
+        connection.commit()
+        cursor.close()
+        connection.close()
 
 class Question():
-    def __init__(self, texte: str, title: str, image: str, position: int, answers: typing.List[Answer]):
-        self.texte = texte
+    def __init__(self, text: str, title: str, image: str, position: int, answers: typing.List[Answer]):
+        self.text = text
         self.title = title
         self.image = image
         self.position = position
-        self.answers = answers
+        self.possibleAnswers = answers
 
     def ToJson(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-    
-    def ToSQLInsert(self):
-        return f"insert into Question (texte, title, image, position) values ('{self.texte}', '{self.title}', '{self.image}', {self.position})"
+        return json.dumps(self.__dict__, default=lambda o: o.__dict__)
+
 
     @staticmethod
     def ToSQLDelete(position: int):
@@ -54,11 +49,45 @@ class Question():
     
     @staticmethod
     def AnswerToSQLInsert(answer: Answer):
-        return f"insert into Answer (text, is_correct) values ('{answer.text}', {answer.is_correct})"
+        return f"insert into Answer (text, isCorrect) values ('{answer.text}', {answer.isCorrect})"
+    
+    @staticmethod
+    def AddQuestion(question):
+        connection = GetConnection()
+        cursor = connection.cursor()
+        cursor.execute(f"insert into Question (text, title, image, position) values ('{question.text}', '{question.title}', '{question.image}', {question.position})")
+        for answer in question.answers:
+            cursor.execute(Question.AnswerToSQLInsert(answer))
+        connection.commit()
+        connection.close()
+
+    @staticmethod
+    def GetQuestion(position: int) :
+        db_connection = GetConnection()
+        cursor = db_connection.cursor()
+        cursor.execute(f"select * from Question where position = {position}")
+        question = cursor.fetchone()
+        cursor.execute(f"select * from Answer where questionId = {question[0]}")
+        answers = cursor.fetchall()
+        cursor.close()
+        db_connection.close()
+        return Question(question[1], question[2], question[3], question[4], [Answer(answer[1], answer[2] == 1) for answer in answers])
+
+    @staticmethod
+    def DeleteQuestion(position: int):
+        db_connection = GetConnection()
+        cursor = db_connection.cursor()
+        cursor.execute(Question.ToSQLDelete(position))
+        cursor.commit()
+        cursor.close()
+        return cursor.rowcount > 0
+
 
 
 def ToJson(obj: object) -> str:
-    return json.dumps()
+    return json.dumps(obj)
+
+
 
 @deprecation.deprecated()
 def ToObject(json_str: str) -> object:
@@ -84,28 +113,3 @@ def ToSQLDelete(objTable: str, fieldNam: str, fieldValue: str) -> str:
 def ToSQLGet(objTable: str, fieldNam: str, fieldValue: str) -> str:
     query: str = f"SELECT * FROM {objTable} WHERE {fieldNam} = {fieldValue}"
     return query
-
-def AddQuestion(question):
-    query: str = ToSQLInsert(question, "Question")
-    with GetConnection() as conn:
-        cur = conn.cursor()
-        cur.execute(query)
-        conn.commit()
-        
-    
-def DeleteQuestion(fieldValue):
-    query: str = ToSQLDelete("Question", "Position", 1)
-    with GetConnection() as conn:
-        cur = conn.cursor()
-        cur.execute(query)
-        conn.commit()
-        return cur.rowcount
-    return 0
-
-def GetQuestion(fieldValue):
-    query: str = ToSQLGet("Question", "Position", 1)
-    with GetConnection() as conn:
-        cur = conn.cursor()
-        cur.execute(query)
-        return cur.fetchone()
-    return None

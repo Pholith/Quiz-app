@@ -41,7 +41,7 @@ def AddQuestion():
 	if not IsAuthorized(request):
 		return {}, 401
 	payload = request.get_json()
-	model.AddQuestion(request.get_json())
+	model.Question.AddQuestion(request.get_json())
 	return {}, 200
 
 @app.route('/questions/<section>', methods=['DELETE'])
@@ -50,7 +50,7 @@ def DeleteQuestion(section):
 		return {}, 401
 	if not section.isdigit():
 		return {}, 400
-	if model.DeleteQuestion(section) == 0:
+	if model.Question.DeleteQuestion(section) == 0:
 		return {}, 404
 	return {}, 200
 
@@ -58,10 +58,10 @@ def DeleteQuestion(section):
 def GetQuestion(section):
 	if not section.isdigit():
 		return {}, 400
-	question: model.Question = model.GetQuestion(section)
+	question: model.Question = model.Question.GetQuestion(section)
 	if question is None:
 		return {}, 404
-	return {model.ToJson(question)}, 200
+	return question.ToJson(), 200
 
 
 if __name__ == "__main__":

@@ -68,21 +68,39 @@ class Question():
             possibleAnswers.append(Answer.FromJson(element))
 
         return Question(json["text"], json["title"], json["image"], json["position"], possibleAnswers)
-        
+            
+    @staticmethod
+    def GetNextPosition():
+        connection = GetConnection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT q1.Position+1 FROM Question q1 WHERE NOT EXISTS(SELECT * FROM Question q2 WHERE q2.Id+1 = q1.Id) ORDER BY q1.Id")
+        maxPosition = cursor.fetchone()[0]
+        cursor.close()
+        connection.close()
+        if maxPosition is None:
+            return 1
+        return maxPosition + 1
 
     @staticmethod   
     def AddQuestion(question):
         connection = GetConnection()
         cursor = connection.cursor()
-        Question.DeleteQuestion(question.position)
+
+        previousQuestion: Question = Question.GetQuestion(question.position)
+        if previousQuestion is not None:
+            Question.DeleteQuestion(question.position)
+            previousQuestion.position += 1 #Question.GetNextPosition()
+            Question.AddQuestion(previousQuestion)
+
         cursor.execute(f"insert or replace into Question (text, title, image, position) values (\"{question.text}\", \"{question.title}\", '{question.image}', {question.position})")
         for answer in question.possibleAnswers:
             Answer.AddAnswer(answer.text, answer.isCorrect, question.position)
+        
         connection.commit()
         connection.close()
 
     @staticmethod
-    def GetQuestion(position: int) :
+    def GetQuestion(position: int):
         db_connection = GetConnection()
         cursor = db_connection.cursor()
         cursor.execute(f"select * from Question where position = {position}")
@@ -103,34 +121,20 @@ class Question():
         cursor.close()
         return cursor.rowcount > 0
 
+    @staticmethod
+    def ReorderQuestions():
+        db_connection = GetConnection()
+        cursor = db_connection.cursor()
+        # fill every position with the next question
+        cursor.execute("select * from Question order by position")
+        questions = cursor.fetchall()
+        for i in range(len(questions)):
+            cursor.execute(f"update Question set position = {i+1} where position = {questions[i][4]}")
+            cursor.execute(f"update Answer set questionPosition = {i+1} where questionPosition = {questions[i][4]}")
+        db_connection.commit()
+        cursor.close()
+        db_connection.close()
 
 
 def ToJson(obj: object) -> str:
     return json.dumps(obj)
-
-
-
-@deprecation.deprecated()
-def ToObject(json_str: str) -> object:
-    return json.loads(json_str)
-
-@deprecation.deprecated()
-def ToSQLInsert(obj: object, objName: str) -> str:
-    query: str = f"INSERT OR IGNORE INTO {objName} VALUES (Null, "
-    for field in obj:
-        if not is_primitive(obj[field]): continue
-        fieldText: str = str(obj[field])
-        if type(obj[field]) == str: fieldText = "\"" + fieldText + "\"" 
-        query += fieldText + ", "
-    query = query[:-2] + ")"
-    return query
-
-@deprecation.deprecated()
-def ToSQLDelete(objTable: str, fieldNam: str, fieldValue: str) -> str:
-    query: str = f"DELETE FROM {objTable} WHERE {fieldNam} = {fieldValue}"
-    return query
-
-@deprecation.deprecated()
-def ToSQLGet(objTable: str, fieldNam: str, fieldValue: str) -> str:
-    query: str = f"SELECT * FROM {objTable} WHERE {fieldNam} = {fieldValue}"
-    return query

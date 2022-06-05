@@ -52,6 +52,7 @@ def DeleteQuestion(section):
 		return {}, 400
 	if model.Question.DeleteQuestion(int(section)) == 0:
 		return {}, 404
+	model.Question.ReorderQuestions()
 	return {}, 204
 
 @app.route('/questions/<section>', methods=['GET'])
@@ -78,7 +79,9 @@ def UpdateQuestion(section):
 	question.position = request.get_json()['position']
 	question.possibleAnswers = model.Answer.MultipleFromJson(request.get_json()['possibleAnswers'])
 	model.Question.DeleteQuestion(section)
+	model.Question.ReorderQuestions()
 	model.Question.AddQuestion(question)
+	model.Question.ReorderQuestions()
 	return {}, 200
 
 if __name__ == "__main__":

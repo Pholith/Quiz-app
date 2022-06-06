@@ -19,6 +19,68 @@ primitive = (int, str, bool)
 def is_primitive(thing):
     return isinstance(thing, primitive)
 
+class Participation():
+    def __init__(self, playerName: str, answers: List[int]):
+        self.playerName = playerName
+        self.answers = answers
+
+    
+    def GetScore(self) -> int:
+        score: int = 0
+        for i in range(len(self.answers)):
+            questionI: Question = Question.GetQuestion(i+1)
+            if questionI is None:
+                print("Error: question " + str(i+1) + " not found")
+                continue
+            if questionI.possibleAnswers[self.answers[i]-1].isCorrect == 1:
+                score += 1
+        return score
+
+    @staticmethod
+    def FromJson(json: dict):
+        return Participation(json['playerName'], json['answers'])
+
+    def AddParticipation(self):
+        db_connection = GetConnection()
+        db_connection.execute("INSERT INTO participation (playerName, answers) VALUES (?, ?)", (self.playerName, json.dumps(self.answers)))
+        db_connection.commit()
+        db_connection.close()
+    
+    @staticmethod
+    def GetParticipation(id: int):
+        db_connection = GetConnection()
+        cursor = db_connection.execute("SELECT * FROM participation WHERE id = ?", (id,))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        return Participation(row[0], row[1], json.loads(row[2]))
+
+    @staticmethod
+    def GetParticipations():
+        db_connection = GetConnection()
+        cursor = db_connection.execute("SELECT * FROM participation")
+        rows = cursor.fetchall()
+        participations: List[Participation] = []
+        for row in rows:
+            participations.append(Participation(row[0], json.loads(row[1])))
+        return participations
+
+    @staticmethod
+    def GetScoreByParticipation():
+        result = []
+        participations: List[Participation] = Participation.GetParticipations()
+        for participation in participations:
+            result.append({"playerName": participation.playerName ,"score": participation.GetScore()})
+        return result
+
+    @staticmethod
+    def DeleteParticipations():
+        db_connection = GetConnection()
+        db_connection.execute("DELETE FROM participation")
+        db_connection.commit()
+        db_connection.close()
+
+
 class Answer():
     def __init__(self, text: str, isCorrect: bool):
         self.text = text
@@ -70,16 +132,14 @@ class Question():
         return Question(json["text"], json["title"], json["image"], json["position"], possibleAnswers)
             
     @staticmethod
-    def GetNextPosition():
+    def GetNumberOfQuestions():
         connection = GetConnection()
         cursor = connection.cursor()
-        cursor.execute("SELECT q1.Position+1 FROM Question q1 WHERE NOT EXISTS(SELECT * FROM Question q2 WHERE q2.Id+1 = q1.Id) ORDER BY q1.Id")
-        maxPosition = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM question")
+        result = cursor.fetchone()
         cursor.close()
         connection.close()
-        if maxPosition is None:
-            return 1
-        return maxPosition + 1
+        return result[0]
 
     @staticmethod   
     def AddQuestion(question):
@@ -106,7 +166,7 @@ class Question():
         cursor.execute(f"select * from Question where position = {position}")
         question: Question = cursor.fetchone()
         if question is None: return None
-        cursor.execute(f"select * from Answer where questionPosition = {position}")
+        cursor.execute(f"select * from Answer where questionPosition = {position} order by id")
         answers = cursor.fetchall()
         cursor.close()
         db_connection.close()

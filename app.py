@@ -25,7 +25,7 @@ def hello_world():
 
 @app.route('/quiz-info', methods=['GET'])
 def GetQuizInfo():
-	return {"size": 0, "scores": []}, 200
+	return {"size": model.Question.GetNumberOfQuestions(), "scores": model.Participation.GetScoreByParticipation()}, 200
 
 	
 @app.route('/login', methods=['POST'])
@@ -83,6 +83,20 @@ def UpdateQuestion(section):
 	model.Question.AddQuestion(question)
 	model.Question.ReorderQuestions()
 	return {}, 200
+
+@app.route('/participations', methods=['POST'])
+def AddParticipation():
+	payload = request.get_json()
+	participation: model.Participation = model.Participation.FromJson(payload)
+	if model.Question.GetNumberOfQuestions() > len(participation.answers) or len(participation.answers) > model.Question.GetNumberOfQuestions():
+		return {}, 400
+	model.Participation.AddParticipation(model.Participation.FromJson(payload))
+	return {"playerName": participation.playerName, "score": participation.GetScore()}, 200
+
+@app.route('/participations', methods=['DELETE'])
+def DeleteParticipation():
+	model.Participation.DeleteParticipations()
+	return {}, 204
 
 if __name__ == "__main__":
     app.run()

@@ -1,19 +1,37 @@
 <template>
-  <img v-if="question.image" :src="question.image" />
-  <a @click="$emit('answer-selected', 0)">La réponse A</a>
-  <a @click="$emit('answer-selected', 1)">La réponse B</a>
-  <a @click="$emit('answer-selected', 2)">La réponse C</a>
-  <a @click="$emit('answer-selected', 3)">La réponse D</a>
+  <div class="question-display">
+    <div class="question-display__question">
+      <h2>{{ question.text }} </h2>
+    </div>
+    <img v-if="question.image" :src="question.image" />
+    <div class="question-display__answers">
+      <div v-for="(answer, index) in question.possibleAnswers" class="question-display__answer"
+        @click="answerClickedHandler(index + 1)">
+        <h3>{{ answer.text }}</h3>
+      </div>
+    </div>
+  </div>
 
 </template>
 
 <script lang="ts">
 
-var question: any = {};
-
 export default {
-  data() {
-    return { question };
+
+  data(): any {
+    return {
+    };
+  },
+  props: {
+    question: {
+      type: Object,
+      required: true,
+    }
+  },
+  methods: {
+    answerClickedHandler(answerId: number) {
+      this.$emit('answer-selected', answerId);
+    },
   },
   emits: ['answer-selected'],
 

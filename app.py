@@ -2,8 +2,10 @@ from flask import Flask, request
 from typing import *
 import jwt_utils
 import model
+from flask_cors import CORS
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"*": {"origins": "*"}})
 
 
 def IsAuthorized(request) -> bool:

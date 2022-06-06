@@ -1,6 +1,9 @@
 <template>
-  <h1>Question {{ currentQuestionPosition }} / {{ totalNumberOfQuestion }}</h1>
-  <QuestionDisplay :question="currentQuestion" @answer-selected="answerClickedHandler" />
+  <h1 v-if="isFullyLoaded"> Question {{ currentQuestionPosition }} / {{ totalNumberOfQuestion }}</h1>
+  <div v-if="isFullyLoaded">
+    <QuestionDisplay :question="currentQuestion" @answer-selected="answerClickedHandler" />
+
+  </div>
 
 </template>
 
@@ -8,37 +11,43 @@
 import router from "../router";
 import QuizApiService from "../services/QuizApiService";
 import QuestionDisplay from "../components/QuestionDisplay.vue";
+import { ParticipationStorageService } from "../services/ParticipationStorageService";
 
-var currentQuestionPosition = 0;
-var totalNumberOfQuestion = 1;
-var currentQuestion: any = null;
+var answers: number[] = [];
 
 export default {
   data() {
     return {
-      currentQuestionPosition: currentQuestionPosition,
-      totalNumberOfQuestion: totalNumberOfQuestion,
-      currentQuestion: currentQuestion
+      currentQuestionPosition: 1,
+      totalNumberOfQuestion: 0,
+      currentQuestion: null,
+      isFullyLoaded: false,
     };
   },
-  props: {
-  },
+
   methods: {
 
     async answerClickedHandler(answerId: number) {
-      if (currentQuestion.correctAnswerId === answerId) {
-        console.log("Bonne réponse");
+      answers.push(answerId);
+      if (this.currentQuestionPosition < this.totalNumberOfQuestion) {
+        this.currentQuestionPosition++;
+        this.loadQuestionByPosition(this.currentQuestionPosition);
+
       } else {
-        console.log("Mauvaise réponse");
+        this.endQuiz();
       }
     },
     async loadQuestionByPosition(position: number) {
       console.log("loadQuestionByPosition");
-      currentQuestion = await QuizApiService.getQuestion(position);
-      currentQuestionPosition = position;
-      let quizInfos = await QuizApiService.getQuizInfo();
+      this.currentQuestion = (await QuizApiService.getQuestion(position))?.data;
+      this.totalNumberOfQuestion = await QuizApiService.getTotalNumberOfQuestions();
+      console.log("end of loadQuestion:");
+      console.log(this.currentQuestion);
+      this.isFullyLoaded = true;
+
     },
     async endQuiz() {
+      QuizApiService.addParticipation({ playerName: ParticipationStorageService.getPlayerName(), answers: answers });
       router.push('/end');
     },
   },
@@ -46,11 +55,10 @@ export default {
   components: {
     QuestionDisplay
   },
-
-  async created() {
-    console.log("QuestionManager created");
-    this.loadQuestionByPosition(currentQuestionPosition);
-  },
+  created() {
+    console.log("created");
+    this.loadQuestionByPosition(1);
+  }
 }
 </script>
 

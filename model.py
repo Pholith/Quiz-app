@@ -135,7 +135,7 @@ class Question():
     def GetNumberOfQuestions():
         connection = GetConnection()
         cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) FROM question")
+        cursor.execute("SELECT COUNT(*) FROM Question")
         result = cursor.fetchone()
         cursor.close()
         connection.close()

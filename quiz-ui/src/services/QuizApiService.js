@@ -10,7 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import axios, {} from "axios";
 var config = {
     baseURL: `${import.meta.env.VITE_API_URL}`,
-    //json: true,
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
 };
 const instance = axios.create(config);
 export default {
@@ -18,6 +22,7 @@ export default {
         return __awaiter(this, void 0, void 0, function* () {
             var headers = {
                 "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
             };
             if (token != null) {
                 headers.authorization = "Bearer " + token;
@@ -43,7 +48,27 @@ export default {
         return this.call("get", "quiz-info");
     },
     getQuestion(position) {
-        return '{ "Quel est blabla", "titre", "image", 1}';
         return this.call("get", "questions/" + position);
+    },
+    getTotalNumberOfQuestions() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let infos = yield this.call("get", "quiz-info");
+            if (!infos)
+                return 0;
+            return infos.data["size"];
+        });
+    },
+    addParticipation(participation) {
+        return this.call("post", "participations", participation);
+    },
+    getPlayerParticipation(playerName) {
+        this.call("get", "quiz-info").then((response) => {
+            return response.data["scores"].find((score) => {
+                return score.playerName === playerName;
+            });
+        }, (error) => {
+            console.error(error);
+        });
     }
+    // ------------------------------------------------
 };

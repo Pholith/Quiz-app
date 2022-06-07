@@ -57,11 +57,13 @@ export default {
     return this.call("post", "participations", participation);
   },
 
-  getPlayerParticipation(playerName: string) {
-    this.call("get", "quiz-info").then((response: any) => {
-      return response.data["scores"].find((score: any) => {
+  async getPlayerParticipation(playerName: string) {
+    return this.call("get", "quiz-info").then((response: any) => {
+      let findedScore: any = response.data["scores"].find((score: any) => {
         return score.playerName === playerName;
       });
+      if (findedScore) return findedScore["score"];
+      else return -1;
     }, (error: any) => {
       console.error(error);
     });

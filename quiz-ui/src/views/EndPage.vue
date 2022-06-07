@@ -1,5 +1,7 @@
 <template>
-  <p>Your score: {{ score }}</p>
+  <div class="endPage">
+    <p v-if="score != -1">Votre score: {{ score }}</p>
+  </div>
 </template>
 
 <script lang="ts">
@@ -10,7 +12,7 @@ import QuizApiService from "../services/QuizApiService";
 export default {
   data() {
     return {
-      score: 0,
+      score: -1,
     };
   },
 
@@ -19,8 +21,12 @@ export default {
     },
   },
 
-  async created() {
-    this.score = await QuizApiService.getPlayerParticipation(ParticipationStorageService.getPlayerName());
+  created() {
+    QuizApiService.getPlayerParticipation(ParticipationStorageService.getPlayerName())
+      .then((score: number) => {
+        this.score = score;
+        console.log("score récupéré: ", this.score);
+      });
   },
 }
 </script>

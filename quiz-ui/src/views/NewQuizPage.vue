@@ -12,19 +12,16 @@
 import { ParticipationStorageService } from "../services/ParticipationStorageService";
 import router from "../router";
 
-var username = "";
-
 export default {
   data() {
     return {
-      username
+      username: ""
     };
   },
 
   methods: {
     launchNewQuiz() {
-
-      ParticipationStorageService.savePlayerName(username);
+      ParticipationStorageService.savePlayerName(this.username);
       router.push('/question');
     },
   },

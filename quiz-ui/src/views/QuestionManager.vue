@@ -1,10 +1,10 @@
 <template>
-  <h1 v-if="isFullyLoaded"> Question {{ currentQuestionPosition }} / {{ totalNumberOfQuestion }}</h1>
-  <div v-if="isFullyLoaded">
-    <QuestionDisplay :question="currentQuestion" @answer-selected="answerClickedHandler" />
-
+  <div class="questionManager">
+    <h1 v-if="isFullyLoaded"> Question {{ currentQuestionPosition }} / {{ totalNumberOfQuestion }}</h1>
+    <div class="answers" v-if="isFullyLoaded">
+      <QuestionDisplay :question="currentQuestion" @answer-selected="answerClickedHandler" />
+    </div>
   </div>
-
 </template>
 
 <script lang="ts">
@@ -13,14 +13,13 @@ import QuizApiService from "../services/QuizApiService";
 import QuestionDisplay from "../components/QuestionDisplay.vue";
 import { ParticipationStorageService } from "../services/ParticipationStorageService";
 
-var answers: number[] = [];
-
 export default {
   data() {
     return {
       currentQuestionPosition: 1,
       totalNumberOfQuestion: 0,
       currentQuestion: null,
+      answers: [],
       isFullyLoaded: false,
     };
   },
@@ -28,7 +27,7 @@ export default {
   methods: {
 
     async answerClickedHandler(answerId: number) {
-      answers.push(answerId);
+      this.answers.push(answerId);
       if (this.currentQuestionPosition < this.totalNumberOfQuestion) {
         this.currentQuestionPosition++;
         this.loadQuestionByPosition(this.currentQuestionPosition);
@@ -38,16 +37,13 @@ export default {
       }
     },
     async loadQuestionByPosition(position: number) {
-      console.log("loadQuestionByPosition");
       this.currentQuestion = (await QuizApiService.getQuestion(position))?.data;
       this.totalNumberOfQuestion = await QuizApiService.getTotalNumberOfQuestions();
-      console.log("end of loadQuestion:");
-      console.log(this.currentQuestion);
       this.isFullyLoaded = true;
 
     },
     async endQuiz() {
-      QuizApiService.addParticipation({ playerName: ParticipationStorageService.getPlayerName(), answers: answers });
+      QuizApiService.addParticipation({ playerName: ParticipationStorageService.getPlayerName(), answers: this.answers });
       router.push('/end');
     },
   },

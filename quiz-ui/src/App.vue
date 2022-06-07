@@ -1,18 +1,18 @@
 <template>
-  <header>
-
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
+  <div class="wrapper  justify-content-top ">
+    <header>
+      <nav class="navbar">
+        <RouterLink class="nav-item" to="/">Accueil</RouterLink>
       </nav>
-    </div>
-  </header>
+    </header>
 
-  <RouterView />
+    <RouterView />
+  </div>
 </template>
 
 <style>
-@import '@/assets/base.css';
+@import "@/assets/main.css";
+@import "https://raw.githubusercontent.com/necolas/normalize.css/master/normalize.css";
 
 #app {
   max-width: 1280px;
